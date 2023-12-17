@@ -26,7 +26,7 @@ I used mingw gcc to compile, with `i686-w64-mingw32-gcc ghost.c -o ghost.exe`. R
 
 Injection of shellcode of arbitrary size should take <1s to complete. However, do note the program is effectively frozen for that time, and may be suspicious if you inject a GUI program.
 
-This program has been fully tested on Windows 7 SP1 (build 7601) and Windows 10 22H2 (build 19045). It should also work on Windows 8 (build 9200), but I do not expect it to work on 8.1 (build 9600).
+This program has been fully tested on Windows 7 SP1 (build 7601) and Windows 10 22H2 (build 19045). It should also work on Windows 8 (build 9200), but I do not expect it to work on 8.1 (build 9600). Windows 11 support is currently unknown (as I cannot find any ntdll downloads for windows 11 online, and do not have a VM of it on hand), but if the required gadgets exist, then I believe it should work.
 
 ## Credits
 Original ghostwriting repo - https://github.com/c0de90e7/GhostWriting/
