@@ -1,5 +1,5 @@
 # ghostwriting-2
-A greatly improved version of the original [ghostwriting](https://github.com/c0de90e7/GhostWriting/blob/master/gw_ng.c) process injection technique, this technique is also able to inject threads using only `OpenThread`, `GetThreadContext`, `SetThreadContext`, `SuspendThread`, and `ResumeThread` APIs. However, while the fundamental mechanism is similar, the whole implementations are rather different. Built for x86.
+A greatly improved version of the original [ghostwriting](https://github.com/c0de90e7/GhostWriting/blob/master/gw_ng.c) process injection technique, this technique is also able to inject threads using only `OpenThread`, `GetThreadContext`, `SetThreadContext`, `SuspendThread`, and `ResumeThread` APIs, without `WriteProcessMemory`, `CreateRemoteThread`, `QueueUserAPC`, or any common APIs for process injection. However, while the fundamental mechanism is similar, the whole implementations are rather different. Built for x86.
 
 ![image](https://github.com/lemond69/ghostwriting-2/assets/139056562/5b1a6df5-f688-479d-824a-a5ce4389f300)
 
