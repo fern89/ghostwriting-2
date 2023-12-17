@@ -45,7 +45,7 @@ void waitunblock(HANDLE thd){
     while(1){
         Sleep(1);
         GetThreadTimes(thd, &a, &b, &c, &d);
-        if(d.dwLowDateTime - pt > 8) break;
+        if(d.dwLowDateTime - pt > 9) break; //when user time is >90% of total time, we're probably done
         pt = d.dwLowDateTime;
     }
     return;
