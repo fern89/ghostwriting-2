@@ -25,3 +25,6 @@ Over the original ghostwriting technique, this technique has multiple difference
 I used mingw gcc to compile, with `i686-w64-mingw32-gcc ghost.c -o ghost.exe`. Run with `ghost.exe [thread id]`
 
 Injection of shellcode of arbitrary size should take <1s to complete. However, do note the program is effectively frozen for that time, and may be suspicious if you inject a GUI program.
+
+## Credits
+Original ghostwriting repo - https://github.com/c0de90e7/GhostWriting/
