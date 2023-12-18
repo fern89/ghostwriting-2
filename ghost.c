@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include "helpers.h"
+#include "shellcode.h"
 #define HEAP_ALLOC 0x1000 //how much mem to alloc on heap in victim
 #define gpa(x, y) ((unsigned int)GetProcAddress(GetModuleHandleA(x), y))
 int main(int argc, char** argv){
