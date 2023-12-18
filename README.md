@@ -4,7 +4,7 @@ A greatly improved version of the original [ghostwriting](https://github.com/c0d
 ![image](https://github.com/lemond69/ghostwriting-2/assets/139056562/5b1a6df5-f688-479d-824a-a5ce4389f300)
 
 ## Method of action
-First we select some gadgets. We will use `push edx; call eax` and `jmp $` gadgets. While the original ghostwriting uses `mov [reg1], reg2 ...... ret` gadgets, I find that far too overcomplicated as you need to basically implement an entire disassembler to find a good gadget. However, `push edx; call eax` is not the most reliable of gadgets, as some versions of Windows may not have the gadget in ntdll. It is definitely recommended to have this be generalized to any `push reg1; call reg2` gadgets (as we have observed Windows 8.1 to lack this gadget, and have not tested this on any Windows 11 ntdlls), but I feel it would overcomplicate the code for a simple POC, so you can implement it yourself if you need the support. The `jmp $` gadget, doesn't actually exist on it's own, but it is a part of a larger asm instruction, so it still works.
+First we select some gadgets. We will use `push edx; call eax` and `jmp $` gadgets. While the original ghostwriting uses `mov [reg1], reg2 ...... ret` gadgets, I find that far too overcomplicated as you need to basically implement an entire disassembler to find a good gadget. However, `push edx; call eax` is not the most reliable of gadgets, as some versions of Windows may not have the gadget in ntdll. It is definitely recommended to have this be generalized to any `push reg1; call reg2` gadgets (as we have observed Windows 8.1 to lack this gadget), but I feel it would overcomplicate the code for a simple POC, so you can implement it yourself if you need the support. The `jmp $` gadget, doesn't actually exist on it's own, but it is a part of a larger asm instruction, so it still works.
 
 Then, we set the EIP to a `jmp $` and wait for thread to stop waiting for messages (blocking state). We know when it's ready when the usermode time from `GetThreadTimes` starts increasing steadily, indicating it's stuck in the `jmp $` instruction.
 
@@ -26,7 +26,7 @@ I used mingw gcc to compile, with `i686-w64-mingw32-gcc ghost.c -o ghost.exe`. R
 
 Injection of shellcode of arbitrary size should take <1s to complete. However, do note the program is effectively frozen for that time, and may be suspicious if you inject a GUI program.
 
-This program has been fully tested on Windows 7 SP1 (build 7601) and Windows 10 22H2 (build 19045). It should also work on Windows 8 (build 9200), but I do not expect it to work on 8.1 (build 9600). Windows 11 support is currently unknown (as I cannot find any ntdll downloads for windows 11 online, and do not have a VM of it on hand), but if the required gadgets exist, then I believe it should work.
+This program has been fully tested on Windows 7 SP1 (build 7601) and Windows 10 22H2 (build 19045). It should also work on Windows 8 (build 9200) and Windows 11 (build 22621), but I do not expect it to work on 8.1 (build 9600).
 
 ## Credits
 Original ghostwriting repo - https://github.com/c0de90e7/GhostWriting/
